@@ -2,7 +2,32 @@ import json
 import pandas as pd
 
 df = pd.read_csv("data/Global_Superstore.csv", encoding="utf-8", sep=";", decimal=",")
-
+df = df.rename(columns={
+    "Row ID": "row_id",
+    "Order ID": "order_id",
+    "Order Date": "order_date",
+    "Ship Date": "ship_date",
+    "Ship Mode": "ship_mode",
+    "Customer ID": "customer_id",
+    "Customer Name": "customer_name",
+    "Segment": "segment",
+    "City": "city",
+    "State": "state",
+    "Country": "country",
+    "Postal Code": "postal_code",
+    "Market": "market",
+    "Region": "region",
+    "Product ID": "product_id",
+    "Category": "category",
+    "Sub-Category": "sub_category",
+    "Product Name": "product_name",
+    "Sales": "sales",
+    "Quantity": "quantity",
+    "Discount": "discount",
+    "Profit": "profit",
+    "Shipping Cost": "shipping_cost",
+    "Order Priority": "order_priority"
+})
 
 def split_product(name):
     parts = [p.strip() for p in str(name).split(',')]
@@ -17,11 +42,11 @@ def split_product(name):
 def build_attributes(row):
     attr = {}
 
-    if pd.notna(row["Type"]):
-        attr["Type"] = row["Type"]
+    if pd.notna(row["type"]):
+        attr["type"] = row["type"]
 
-    if pd.notna(row["Variant"]):
-        attr["Variant"] = row["Variant"]
+    if pd.notna(row["variant"]):
+        attr["variant"] = row["variant"]
 
     return attr
 
@@ -46,35 +71,35 @@ def write_to_file(data, filename, format):
 
 
 # GENERAL CLEAN
-df[['Full Name', 'Type', 'Variant']] = df['Product Name'].apply(split_product)
-df["Order Date"] = pd.to_datetime(df["Order Date"], format="%d-%m-%Y")
-df["Ship Date"] = pd.to_datetime(df["Ship Date"], format="%d-%m-%Y")
+df[['full_name', 'type', 'variant']] = df['product_name'].apply(split_product)
+df["order_date"] = pd.to_datetime(df["order_date"], format="%d-%m-%Y")
+df["ship_date"] = pd.to_datetime(df["ship_date"], format="%d-%m-%Y")
 
 # -------------------------
 #      Customer Table
 # -------------------------
-df_customer = df[['Customer ID', 'Customer Name', 'Segment']].drop_duplicates().reset_index(drop=True)
+df_customer = df[['customer_id', 'customer_name', 'segment']].drop_duplicates().reset_index(drop=True)
 write_to_file(df_customer, "data/customer.csv", "csv")
 
 # -------------------------
 #      Product Table
 # -------------------------
-df_product = df[['Product ID', 'Product Name', 'Category', 'Sub-Category']].drop_duplicates().reset_index(drop=True)
+df_product = df[['product_id', 'product_name', 'category', 'sub_category']].drop_duplicates().reset_index(drop=True)
 write_to_file(df_product, "data/product.csv", "csv")
 
 # -------------------------
 #      Location Table
 # -------------------------
-df_location = df[['City', 'State', 'Country', 'Region', 'Market', 'Postal Code']].drop_duplicates().reset_index(
+df_location = df[['city', 'state', 'country', 'region', 'market', 'postal_code']].drop_duplicates().reset_index(
     drop=True)
-df_location['Location ID'] = df_location.index + 1
-df_location['Location ID'] = df_location['Location ID'].astype(str).str.zfill(4)
+df_location['location_id'] = df_location.index + 1
+df_location['location_id'] = df_location['location_id'].astype(str).str.zfill(4)
 write_to_file(df_location, "data/location.csv", "csv")
 
 # -------------------------
 #        Fact Table
 # -------------------------
-loc_cols = ['City', 'State', 'Country', 'Region', 'Market', 'Postal Code']
+loc_cols = ['city', 'state', 'country', 'region', 'market', 'postal_code']
 
 # merge df awal dengan dim_location untuk dapet Loc ID
 df_fact = df.merge(
@@ -84,19 +109,19 @@ df_fact = df.merge(
 )
 
 df_fact = df_fact[[
-    'Order ID',
-    'Customer ID',
-    'Product ID',
-    'Location ID',
-    'Sales',
-    'Quantity',
-    'Discount',
-    'Profit',
-    'Shipping Cost',
-    'Order Date',
-    'Ship Date',
-    'Ship Mode',
-    'Order Priority'
+    'order_id',
+    'customer_id',
+    'product_id',
+    'location_id',
+    'sales',
+    'quantity',
+    'discount',
+    'profit',
+    'shipping_cost',
+    'order_date',
+    'ship_date',
+    'ship_mode',
+    'order_priority'
 ]]
 
 write_to_file(df_fact, "data/orders.csv", "csv")
@@ -105,65 +130,60 @@ write_to_file(df_fact, "data/orders.csv", "csv")
 #     product_catalog
 # -------------------------
 df_product_catalog = df[
-    ['Product ID', 'Full Name', 'Category', 'Sub-Category', 'Type', 'Variant']].drop_duplicates().reset_index(drop=True)
+    ['product_id', 'full_name', 'category', 'sub_category', 'type', 'variant']].drop_duplicates().reset_index(drop=True)
 df_product_catalog["attributes"] = df_product_catalog.apply(build_attributes, axis=1)
-df_product_catalog = df_product_catalog.rename(columns={
-    "Product ID": "product_id",
-    "Category": "category",
-    "Sub-Category": "sub_category"
-})
-df_product_catalog = df_product_catalog.drop(columns=["Type", "Variant"])
+df_product_catalog = df_product_catalog.drop(columns=["type", "variant"])
 write_to_file(df_product_catalog, "data/product_catalog.json", "json")
 
 # -------------------------
 #       order_recap
 # -------------------------
 df_order_recap = df[[
-    'Order ID',
-    'Order Date',
-    'Customer ID',
-    'Ship Date',
-    'Ship Mode',
-    'Product ID',
-    'Sales',
-    'Quantity',
-    'Discount',
-    'Profit',
-    'Shipping Cost'
+    'order_id',
+    'order_date',
+    'customer_id',
+    'ship_date',
+    'ship_mode',
+    'product_id',
+    'sales',
+    'quantity',
+    'discount',
+    'profit',
+    'shipping_cost'
 ]]
 
-df_order_recap["delay"] = (df_order_recap["Ship Date"] - df_order_recap["Order Date"]).dt.days
+df_order_recap["delay"] = (df_order_recap["ship_date"] - df_order_recap["order_date"]).dt.days
 
 order_docs = []
 
-for order_id, group in df_order_recap.groupby("Order ID"):
+for order_id, group in df_order_recap.groupby("order_id"):
 
     doc = {
         "order_id": order_id,
-        "order_date": group["Order Date"].iloc[0].strftime("%d-%m-%Y"),
-        "customer_id": group["Customer ID"].iloc[0],
+        "order_date": group["order_date"].iloc[0].strftime("%d-%m-%Y"),
+        "customer_id": group["customer_id"].iloc[0],
 
         "products": [],
 
-        "total_profit": round(group["Profit"].sum(),3),
-        "total_sales": round(group["Sales"].sum(),3),
+        "total_profit": round(group["profit"].sum(),3),
+        "total_sales": round(group["sales"].sum(),3),
 
         "shipping": {
-            "ship_mode": group["Ship Mode"].iloc[0],
-            "ship_date": group["Ship Date"].iloc[0].strftime("%d-%m-%Y"),
+            "ship_mode": group["ship_mode"].iloc[0],
+            "ship_date": group["ship_date"].iloc[0].strftime("%d-%m-%Y"),
             "delay": int(group["delay"].iloc[0]),
-            "shipping_cost": round(group["Shipping Cost"].sum(),3)
+            "shipping_cost": round(group["shipping_cost"].sum(),3)
         }
     }
 
     # isi products array
     for _, row in group.iterrows():
         doc["products"].append({
-            "product_id": row["Product ID"],
-            "quantity": row["Quantity"],
-            "sales": row["Sales"],
-            "profit": row["Profit"],
-            "discount": row["Discount"]
+            "product_id": row["product_id"],
+            "quantity": row["quantity"],
+            "sales": row["sales"],
+            "profit": row["profit"],
+            "discount": row["discount"]
         })
 
     order_docs.append(doc)

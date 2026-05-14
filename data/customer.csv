@@ -1,4 +1,4 @@
-Customer ID,Customer Name,Segment
+customer_id,customer_name,segment
 RH-19495,Rick Hansen,Consumer
 JR-16210,Justin Ritter,Corporate
 CR-12730,Craig Reiter,Consumer

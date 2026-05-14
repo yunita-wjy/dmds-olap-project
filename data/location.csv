@@ -1,4 +1,4 @@
-City,State,Country,Region,Market,Postal Code,Location ID
+city,state,country,region,market,postal_code,location_id
 New York City,New York,United States,East,US,10024.0,0001
 Wollongong,New South Wales,Australia,Oceania,APAC,,0002
 Brisbane,Queensland,Australia,Oceania,APAC,,0003
