@@ -15,6 +15,4 @@ except Exception as e:
     print("Connection failed:", e)
 
 db = client[os.getenv("MONGO_DB")]
-product_coll = db["product_catalog"]
-orders_coll = db["order_recap"]
 
