@@ -17,7 +17,7 @@ df = df.rename(columns={
     "Postal Code": "postal_code",
     "Market": "market",
     "Region": "region",
-    "Product ID": "product_id",
+    "Product ID": "ori_product_id",
     "Category": "category",
     "Sub-Category": "sub_category",
     "Product Name": "product_name",
@@ -84,8 +84,16 @@ write_to_file(df_customer, "data/customer.csv", "csv")
 # -------------------------
 #      Product Table
 # -------------------------
-df_product = df[['product_id', 'product_name', 'category', 'sub_category']].drop_duplicates().reset_index(drop=True)
+df_product = df[['product_name', 'category', 'sub_category']].drop_duplicates().reset_index(drop=True)
+df_product['product_id'] = df_product.index + 1
+df_product['product_id'] = df_product['product_id'].astype(str).str.zfill(5)
 write_to_file(df_product, "data/product.csv", "csv")
+
+df = df.merge(
+    df_product[['product_id', 'product_name']],
+    on="product_name",
+    how='left'
+)
 
 # -------------------------
 #      Location Table
@@ -129,10 +137,22 @@ write_to_file(df_fact, "data/orders.csv", "csv")
 # -------------------------
 #     product_catalog
 # -------------------------
+df_ori_ids = df.groupby("product_id")["ori_product_id"].unique().reset_index()
 df_product_catalog = df[
     ['product_id', 'full_name', 'category', 'sub_category', 'type', 'variant']].drop_duplicates().reset_index(drop=True)
+
+df_product_catalog = df_product_catalog.merge(
+    df_ori_ids,
+    on="product_id",
+    how="left"
+)
+df_product_catalog = df_product_catalog.rename(
+    columns={"ori_product_id": "original_product_ids"}
+)
+
 df_product_catalog["attributes"] = df_product_catalog.apply(build_attributes, axis=1)
 df_product_catalog = df_product_catalog.drop(columns=["type", "variant"])
+df_product_catalog["original_product_ids"] = df_product_catalog["original_product_ids"].apply(list)
 write_to_file(df_product_catalog, "data/product_catalog.json", "json")
 
 # -------------------------
