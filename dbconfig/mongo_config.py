@@ -16,3 +16,6 @@ except Exception as e:
 
 db = client[os.getenv("MONGO_DB")]
 
+def get_collection(name):
+    return db[name]
+
