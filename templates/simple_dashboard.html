@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard OLAP - Profitability Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        .kpi-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .kpi-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .insight-panel {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .table-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        body {
+            background-color: #f5f6fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">Dashboard OLAP - Profitability Analytics</h1>
+                
+                <!-- Filters -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label for="yearFilter" class="form-label">Tahun:</label>
+                        <select id="yearFilter" class="form-select">
+                            <option value="">Semua Tahun</option>
+                            {% for year in years %}
+                            <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="categoryFilter" class="form-label">Kategori:</label>
+                        <select id="categoryFilter" class="form-select">
+                            <option value="all">Semua Kategori</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="subcategoryFilter" class="form-label">Subkategori:</label>
+                        <select id="subcategoryFilter" class="form-select">
+                            <option value="all">Semua Subkategori</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- KPI Cards -->
+                <div class="row" id="kpiSection">
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value" id="totalSales">$0</div>
+                            <div class="kpi-label">Total Sales</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value" id="totalProfit">$0</div>
+                            <div class="kpi-label">Total Profit</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value" id="totalOrders">0</div>
+                            <div class="kpi-label">Total Orders</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="kpi-card">
+                            <div class="kpi-value" id="avgDiscount">0%</div>
+                            <div class="kpi-label">Average Discount</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts Row 1 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <h5>Top 10 Products by Sales</h5>
+                            <div id="topSalesChart"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <h5>Top 10 Products by Profit</h5>
+                            <div id="topProfitChart"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts Row 2 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <h5>Discount vs Profit Analysis</h5>
+                            <div id="discountProfitChart"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <h5>Average Discount per Category</h5>
+                            <div id="avgDiscountChart"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts Row 3 -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="chart-container">
+                            <h5>Monthly Sales & Profit Trends</h5>
+                            <div id="trendsChart"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profitability Analysis -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="chart-container">
+                            <h5>Highest Profit Products</h5>
+                            <div class="table-container">
+                                <table class="table table-sm" id="highestProfitTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Profit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="chart-container">
+                            <h5>Lowest Profit Products</h5>
+                            <div class="table-container">
+                                <table class="table table-sm" id="lowestProfitTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Profit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="chart-container">
+                            <h5>High Sales, Low Profit</h5>
+                            <div class="table-container">
+                                <table class="table table-sm" id="highSalesLowProfitTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Sales</th>
+                                            <th>Margin</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Insights Panel -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="chart-container">
+                            <h5>Key Insights</h5>
+                            <div id="insightsPanel" class="insight-panel">
+                                <ul id="insightsList">
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize dashboard
+        let currentData = {};
+        
+        // Event listeners
+        document.getElementById('yearFilter').addEventListener('change', loadData);
+        document.getElementById('categoryFilter').addEventListener('change', function() {
+            loadSubcategories();
+            loadData();
+        });
+        document.getElementById('subcategoryFilter').addEventListener('change', loadData);
+        
+        // Load subcategories when category changes
+        function loadSubcategories() {
+            const category = document.getElementById('categoryFilter').value;
+            fetch(`/api/subcategories/${category}`)
+                .then(response => response.json())
+                .then(subcategories => {
+                    const select = document.getElementById('subcategoryFilter');
+                    select.innerHTML = '<option value="all">Semua Subkategori</option>';
+                    subcategories.forEach(sub => {
+                        select.innerHTML += `<option value="${sub}">${sub}</option>`;
+                    });
+                });
+        }
+        
+        // Load dashboard data
+        function loadData() {
+            const year = document.getElementById('yearFilter').value;
+            const category = document.getElementById('categoryFilter').value;
+            const subcategory = document.getElementById('subcategoryFilter').value;
+            
+            const params = new URLSearchParams();
+            if (year) params.append('year', year);
+            if (category) params.append('category', category);
+            if (subcategory) params.append('subcategory', subcategory);
+            
+            fetch(`/api/data?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    currentData = data;
+                    updateDashboard(data);
+                })
+                .catch(error => {
+                    console.error('Error loading data:', error);
+                });
+        }
+        
+        // Update dashboard with new data
+        function updateDashboard(data) {
+            updateKPIs(data.kpis);
+            createTopSalesChart(data.top_sales);
+            createTopProfitChart(data.top_profit);
+            createDiscountProfitChart(data.discount_profit_scatter);
+            createAvgDiscountChart(data.avg_discount_category);
+            createTrendsChart(data.monthly_trends);
+            updateProfitabilityTables(data);
+            updateInsights(data.insights);
+        }
+        
+        // Update KPI cards
+        function updateKPIs(kpis) {
+            document.getElementById('totalSales').textContent = '$' + kpis.total_sales.toLocaleString();
+            document.getElementById('totalProfit').textContent = '$' + kpis.total_profit.toLocaleString();
+            document.getElementById('totalOrders').textContent = kpis.total_orders.toLocaleString();
+            document.getElementById('avgDiscount').textContent = kpis.avg_discount.toFixed(1) + '%';
+        }
+        
+        // Create top sales chart
+        function createTopSalesChart(data) {
+            const trace = {
+                x: data.values,
+                y: data.products,
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: '#36a2eb' }
+            };
+            
+            const layout = {
+                height: 400,
+                margin: { l: 150, r: 20, t: 20, b: 40 },
+                xaxis: { title: 'Sales ($)' }
+            };
+            
+            Plotly.newPlot('topSalesChart', [trace], layout, {responsive: true});
+        }
+        
+        // Create top profit chart
+        function createTopProfitChart(data) {
+            const trace = {
+                x: data.values,
+                y: data.products,
+                type: 'bar',
+                orientation: 'h',
+                marker: { color: '#4bc0c0' }
+            };
+            
+            const layout = {
+                height: 400,
+                margin: { l: 150, r: 20, t: 20, b: 40 },
+                xaxis: { title: 'Profit ($)' }
+            };
+            
+            Plotly.newPlot('topProfitChart', [trace], layout, {responsive: true});
+        }
+        
+        // Create discount vs profit scatter plot
+        function createDiscountProfitChart(data) {
+            const trace = {
+                x: data.discount,
+                y: data.profit,
+                mode: 'markers',
+                type: 'scatter',
+                text: data.product,
+                marker: { 
+                    color: '#ff6384',
+                    opacity: 0.6,
+                    size: 8
+                }
+            };
+            
+            const layout = {
+                height: 400,
+                xaxis: { title: 'Discount (%)' },
+                yaxis: { title: 'Profit ($)' }
+            };
+            
+            Plotly.newPlot('discountProfitChart', [trace], layout, {responsive: true});
+        }
+        
+        // Create average discount chart
+        function createAvgDiscountChart(data) {
+            const trace = {
+                x: data.categories,
+                y: data.values,
+                type: 'bar',
+                marker: { color: '#ffcd56' }
+            };
+            
+            const layout = {
+                height: 400,
+                yaxis: { title: 'Average Discount (%)' }
+            };
+            
+            Plotly.newPlot('avgDiscountChart', [trace], layout, {responsive: true});
+        }
+        
+        // Create trends chart
+        function createTrendsChart(data) {
+            const salesTrace = {
+                x: data.months,
+                y: data.sales,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Sales',
+                line: { color: '#36a2eb' }
+            };
+            
+            const profitTrace = {
+                x: data.months,
+                y: data.profit,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Profit',
+                yaxis: 'y2',
+                line: { color: '#4bc0c0' }
+            };
+            
+            const layout = {
+                height: 400,
+                xaxis: { title: 'Month' },
+                yaxis: { title: 'Sales ($)', side: 'left' },
+                yaxis2: { title: 'Profit ($)', side: 'right', overlaying: 'y' }
+            };
+            
+            Plotly.newPlot('trendsChart', [salesTrace, profitTrace], layout, {responsive: true});
+        }
+        
+        // Update profitability tables
+        function updateProfitabilityTables(data) {
+            // Highest profit
+            const highestTable = document.querySelector('#highestProfitTable tbody');
+            highestTable.innerHTML = '';
+            data.highest_profit.forEach(item => {
+                highestTable.innerHTML += `
+                    <tr>
+                        <td style="font-size: 0.8rem;">${item.product_name.substring(0, 30)}...</td>
+                        <td>$${item.profit.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            
+            // Lowest profit
+            const lowestTable = document.querySelector('#lowestProfitTable tbody');
+            lowestTable.innerHTML = '';
+            data.lowest_profit.forEach(item => {
+                lowestTable.innerHTML += `
+                    <tr>
+                        <td style="font-size: 0.8rem;">${item.product_name.substring(0, 30)}...</td>
+                        <td>$${item.profit.toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            
+            // High sales low profit
+            const highSalesTable = document.querySelector('#highSalesLowProfitTable tbody');
+            highSalesTable.innerHTML = '';
+            data.high_sales_low_profit.forEach(item => {
+                highSalesTable.innerHTML += `
+                    <tr>
+                        <td style="font-size: 0.8rem;">${item.product_name.substring(0, 30)}...</td>
+                        <td>$${item.sales.toLocaleString()}</td>
+                        <td>${item.profit_margin.toFixed(1)}%</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        // Update insights
+        function updateInsights(insights) {
+            const list = document.getElementById('insightsList');
+            list.innerHTML = '';
+            insights.forEach(insight => {
+                list.innerHTML += `<li>${insight}</li>`;
+            });
+        }
+        
+        // Load initial data
+        loadData();
+    </script>
+</body>
+</html>

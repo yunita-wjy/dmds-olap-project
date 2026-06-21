@@ -1,0 +1,9 @@
+flask==2.3.3
+pandas==2.1.0
+numpy==1.25.2
+scipy==1.11.2
+mysql-connector-python==8.1.0
+pymongo==4.5.0
+python-dotenv==1.0.0
+plotly==5.16.0
+kaleido==0.2.1
