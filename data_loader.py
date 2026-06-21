@@ -62,8 +62,75 @@ def load_hidden_value():
 
     return df_final
 
+@st.cache_data
 def load_trap_product():
-    ...
+    mydb = get_connection()
+    query = """
+    SELECT
+        o.product_id,
+        COUNT(*) AS frequency,
+        AVG(t.order_total) AS avg_basket_value
+    FROM orders o
+    JOIN (
+        SELECT
+            order_id,
+            SUM(sales) AS order_total
+        FROM orders
+        GROUP BY order_id
+    ) t ON o.order_id = t.order_id
+    GROUP BY o.product_id
+    """
+
+    df = pd.read_sql(query, mydb)
+    mydb.close()
+
+    # join nama produk
+    product_df = load_product()
+    df = df.merge(
+        product_df[['product_id', 'product_name']],
+        on='product_id',
+        how='left'
+    )
+
+    # trap score sederhana
+    df['trap_score'] = (
+            df['frequency'] *
+            df['avg_basket_value']
+    )
+
+    df = df.sort_values(
+        'trap_score',
+        ascending=False
+    )
+
+    return df
+
+def load_bought_together(product_id):
+    mydb = get_connection()
+    query = f"""
+    SELECT 
+        o2.product_id, 
+        COUNT(*) AS frequency
+    FROM orders o1
+    JOIN orders o2 ON o1.order_id = o2.order_id  
+    WHERE o1.product_id = '{product_id}' 
+      AND o2.product_id <> '{product_id}'
+    GROUP BY o2.product_id
+    ORDER BY frequency DESC
+    """
+
+    df = pd.read_sql(query, mydb)
+    mydb.close()
+
+    # Gabungkan dengan nama produk
+    product_df = load_product()
+    df = df.merge(
+        product_df[['product_id', 'product_name']],
+        on='product_id',
+        how='left'
+    )
+
+    return df
 
 def load_discount():
     ...

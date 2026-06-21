@@ -14,7 +14,7 @@ col_f1, col_f2 = st.columns(2)
 
 with col_f1:
     category_list = df["category"].dropna().unique()
-    selected_category = st.multiselect("Select Category", category_list)
+    selected_category = st.selectbox("Select Category", category_list)
 
 # with col_f2:
 #     metric = st.selectbox(
