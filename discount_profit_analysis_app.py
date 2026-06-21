@@ -11,19 +11,31 @@ app = Flask(__name__)
 # Load data
 def load_data():
     try:
+        print(f"\n=== LOAD DATA FUNCTION CALLED ===")
         orders_df = pd.read_csv('data/orders.csv')
         products_df = pd.read_csv('data/product.csv')
         location_df = pd.read_csv('data/location.csv')
         
+        print(f"DEBUG: Orders: {len(orders_df)}, Products: {len(products_df)}, Locations: {len(location_df)}")
         # Clean location data - remove rows with missing region or country
         location_df = location_df.dropna(subset=['region', 'country'])
+        location_df = location_df[location_df['region'].str.strip() != '']
+        location_df = location_df[location_df['country'].str.strip() != '']
         
-        # Merge orders with products and location
-        df = orders_df.merge(products_df, on='product_id', how='left')
-        df = df.merge(location_df, on='location_id', how='left')
+        print(f"DEBUG: Clean locations: {len(location_df)}")
+        print(f"DEBUG: Location regions: {location_df['region'].value_counts().to_dict()}")
+        
+        # Merge orders with products and location - INNER JOIN untuk memastikan data lengkap
+        df = orders_df.merge(products_df, on='product_id', how='inner')
+        df = df.merge(location_df, on='location_id', how='inner')
+        
+        print(f"DEBUG: After merge: {len(df)}")
         
         # Remove rows where location merge failed
         df = df.dropna(subset=['region', 'country'])
+        
+        print(f"DEBUG: Final data: {len(df)}")
+        print(f"DEBUG: Final regions: {df['region'].value_counts().to_dict()}")
         
         # Convert dates
         df['order_date'] = pd.to_datetime(df['order_date'])
@@ -50,17 +62,23 @@ def load_data():
 def dashboard():
     df = load_data()
     
-    # Get filter options
-    years = sorted(df['year'].unique()) if not df.empty else []
-    categories = sorted(df['category'].dropna().unique()) if not df.empty else []
-    regions = sorted(df['region'].dropna().unique()) if not df.empty else []
-    countries = sorted(df['country'].dropna().unique()) if not df.empty else []
+    # Get filter options - simple approach
+    if not df.empty:
+        years = sorted(df['year'].unique())
+        categories = sorted(df['category'].unique())
+        regions = sorted(df['region'].unique())
+        
+        print(f"DASHBOARD FILTERS:")
+        print(f"Years: {years}")
+        print(f"Categories: {categories}")
+        print(f"Regions: {regions}")
+    else:
+        years, categories, regions = [], [], []
     
     return render_template('discount_profit_dashboard.html', 
                          years=years, 
                          categories=categories,
-                         regions=regions,
-                         countries=countries)
+                         regions=regions)
 
 @app.route('/api/data')
 def get_data():
@@ -71,10 +89,10 @@ def get_data():
     category = request.args.get('category')
     subcategory = request.args.get('subcategory')
     region = request.args.get('region')
-    country = request.args.get('country')
     
-    # Apply filters
+    # Apply filters - simple approach
     filtered_df = df.copy()
+    
     if year:
         filtered_df = filtered_df[filtered_df['year'] == year]
     if category and category != 'all':
@@ -83,8 +101,6 @@ def get_data():
         filtered_df = filtered_df[filtered_df['sub_category'] == subcategory]
     if region and region != 'all':
         filtered_df = filtered_df[filtered_df['region'] == region]
-    if country and country != 'all':
-        filtered_df = filtered_df[filtered_df['country'] == country]
     
     return create_dashboard_data(filtered_df)
 
@@ -198,35 +214,19 @@ def create_dashboard_data(df):
 
 @app.route('/api/subcategories/<category>')
 def get_subcategories(category):
+    print(f"\n=== GET SUBCATEGORIES API ===")
+    print(f"Requested category: '{category}'")
+    
     df = load_data()
     if category == 'all':
         subcategories = []
+        print("Getting ALL subcategories: none (all selected)")
     else:
-        subcategories = sorted(df[df['category'] == category]['sub_category'].dropna().unique())
+        subcategories = sorted(df[df['category'] == category]['sub_category'].unique())
+        print(f"Subcategories for '{category}': {subcategories}")
+    
     return jsonify(subcategories)
 
-@app.route('/api/countries/<region>')
-def get_countries(region):
-    try:
-        df = load_data()
-        if df.empty:
-            return jsonify([])
-            
-        if region == 'all':
-            countries = sorted(df['country'].dropna().unique())
-        else:
-            # Filter by region and remove NaN values
-            region_df = df[df['region'] == region]
-            countries = sorted(region_df['country'].dropna().unique())
-        
-        # Convert to list
-        countries_list = countries.tolist() if hasattr(countries, 'tolist') else list(countries)
-        print(f"Region: {region}, Countries found: {len(countries_list)}, Countries: {countries_list[:5]}...")  # Debug
-        return jsonify(countries_list)
-        
-    except Exception as e:
-        print(f"Error in get_countries: {e}")
-        return jsonify([])
 
 def generate_enhanced_insights(df, profit_by_discount_range):
     insights = []

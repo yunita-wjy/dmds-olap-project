@@ -73,12 +73,6 @@
             <div class="col-12">
                 <h1 class="text-center mb-4">Dashboard OLAP - Discount-Profit Analysis</h1>
                 
-                <!-- Research Objective -->
-                <div class="research-objective">
-                    <h5 class="mb-3">Tujuan Penelitian</h5>
-                    <p class="mb-0"><strong>"Menganalisis tingkat pengaruh dan ketergantungan profit terhadap pemberian diskon guna mengoptimalkan strategi pricing."</strong></p>
-                </div>
-                
                 <!-- Filters -->
                 <div class="row mb-4">
                     <div class="col-md-2">
@@ -112,12 +106,6 @@
                             {% for region in regions %}
                             <option value="{{ region }}">{{ region }}</option>
                             {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="countryFilter" class="form-label">Country:</label>
-                        <select id="countryFilter" class="form-select">
-                            <option value="all">Semua Country</option>
                         </select>
                     </div>
                 </div>
@@ -303,61 +291,28 @@
             loadData();
         });
         document.getElementById('subcategoryFilter').addEventListener('change', loadData);
-        document.getElementById('regionFilter').addEventListener('change', function() {
-            loadCountries();
-            loadData();
-        });
-        document.getElementById('countryFilter').addEventListener('change', loadData);
+        document.getElementById('regionFilter').addEventListener('change', loadData);
         
         // Load subcategories when category changes
         function loadSubcategories() {
             const category = document.getElementById('categoryFilter').value;
+            console.log('Loading subcategories for category:', category);
+            
             fetch(`/api/subcategories/${category}`)
                 .then(response => response.json())
                 .then(subcategories => {
+                    console.log('Subcategories received:', subcategories);
                     const select = document.getElementById('subcategoryFilter');
                     select.innerHTML = '<option value="all">Semua Subkategori</option>';
                     subcategories.forEach(sub => {
                         select.innerHTML += `<option value="${sub}">${sub}</option>`;
                     });
-                });
-        }
-        
-        // Load countries when region changes
-        function loadCountries() {
-            const region = document.getElementById('regionFilter').value;
-            console.log('Loading countries for region:', region);
-            
-            // Reset country filter first
-            const select = document.getElementById('countryFilter');
-            select.innerHTML = '<option value="all">Loading...</option>';
-            
-            fetch(`/api/countries/${region}`)
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(countries => {
-                    console.log('Countries received:', countries);
-                    select.innerHTML = '<option value="all">Semua Country</option>';
-                    
-                    if (countries && countries.length > 0) {
-                        countries.forEach(country => {
-                            select.innerHTML += `<option value="${country}">${country}</option>`;
-                        });
-                    } else {
-                        select.innerHTML += '<option value="" disabled>No countries available</option>';
-                    }
                 })
                 .catch(error => {
-                    console.error('Error loading countries:', error);
-                    select.innerHTML = '<option value="all">Semua Country</option>';
-                    select.innerHTML += '<option value="" disabled>Error loading countries</option>';
+                    console.error('Error loading subcategories:', error);
                 });
         }
+
         
         // Load dashboard data
         function loadData() {
@@ -365,14 +320,12 @@
             const category = document.getElementById('categoryFilter').value;
             const subcategory = document.getElementById('subcategoryFilter').value;
             const region = document.getElementById('regionFilter').value;
-            const country = document.getElementById('countryFilter').value;
             
             const params = new URLSearchParams();
             if (year) params.append('year', year);
             if (category) params.append('category', category);
             if (subcategory) params.append('subcategory', subcategory);
             if (region) params.append('region', region);
-            if (country) params.append('country', country);
             
             fetch(`/api/data?${params.toString()}`)
                 .then(response => response.json())
