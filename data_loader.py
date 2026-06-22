@@ -37,7 +37,6 @@ def load_location():
 
 @st.cache_data
 def load_hidden_value():
-    mydb = get_connection()
     query_fact = """
         SELECT product_id, 
             SUM(quantity) AS total_qty, 
@@ -48,8 +47,7 @@ def load_hidden_value():
         FROM orders o 
         JOIN location l ON o.location_id = l.location_id 
         GROUP BY o.product_id, l.region"""
-    df_fact = pd.read_sql(query_fact, mydb)
-    mydb.close()
+    df_fact = fetch_sql(query_fact)
 
     product_df = load_product()
     df_mongo = load_mongo_product()
@@ -60,11 +58,22 @@ def load_hidden_value():
     # merge with product collection to get variant and type
     df_final = df_final.merge(df_mongo, on="product_id", how="left")
 
+    # split / parsing attributes
+    df_final["type"] = df_final["attributes"].apply(
+        lambda x: x.get("type") if isinstance(x, dict) else None
+    )
+
+    df_final["variant"] = df_final["attributes"].apply(
+        lambda x: x.get("variant") if isinstance(x, dict) else None
+    )
+
+    df_final["type"] = df_final["type"].fillna("not have")
+    df_final["variant"] = df_final["variant"].fillna("not have")
+
     return df_final
 
 @st.cache_data
 def load_trap_product():
-    mydb = get_connection()
     query = """
     SELECT
         o.product_id,
@@ -81,8 +90,7 @@ def load_trap_product():
     GROUP BY o.product_id
     """
 
-    df = pd.read_sql(query, mydb)
-    mydb.close()
+    df = fetch_sql(query)
 
     # join nama produk
     product_df = load_product()

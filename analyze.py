@@ -55,12 +55,24 @@ def classify_hidden_value(row, freq_th, avg_profit_th):
     else:
         return "Volume Driver"
 
+
+def get_top_category(df_hidden, region, col, metric):
+    df_temp = df_hidden[df_hidden["region"] == region]
+
+    if metric == "profit":
+        top = df_temp.groupby(col)["total_profit"].sum().idxmax()
+
+    elif metric == "count":
+        top = df_temp.groupby(col)["product_id"].nunique().idxmax()
+
+    return top
+
 # print(df)
-df = load_hidden_value()
-df_hidden, freq_th, profit_th, margin_th, avg_profit_th = analyze_hidden_value(df, metric="Total Profit")
-print(df_hidden.columns)
-print(df_hidden.describe())
-print(df_hidden.sort_values(by="total_profit", ascending=False).head(10))
-print(df_hidden.sort_values(by="frequency", ascending=True).head(10))
-print(df_hidden["frequency"].value_counts())
-print(df_hidden.sort_values(by=["frequency", "total_profit"], ascending=[True, False]))
+# df = load_hidden_value()
+# df_hidden, freq_th, profit_th, margin_th, avg_profit_th = analyze_hidden_value(df, metric="Total Profit")
+# print(df_hidden.columns)
+# print(df_hidden.describe())
+# print(df_hidden.sort_values(by="total_profit", ascending=False).head(10))
+# print(df_hidden.sort_values(by="frequency", ascending=True).head(10))
+# print(df_hidden["frequency"].value_counts())
+# print(df_hidden.sort_values(by=["frequency", "total_profit"], ascending=[True, False]))
