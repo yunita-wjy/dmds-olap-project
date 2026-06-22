@@ -113,8 +113,8 @@ def load_trap_product():
 
     return df
 
+@st.cache_data
 def load_bought_together(product_id):
-    mydb = get_connection()
     query = f"""
     SELECT 
         o2.product_id, 
@@ -127,8 +127,7 @@ def load_bought_together(product_id):
     ORDER BY frequency DESC
     """
 
-    df = pd.read_sql(query, mydb)
-    mydb.close()
+    df = fetch_sql(query)
 
     # Gabungkan dengan nama produk
     product_df = load_product()
@@ -140,5 +139,29 @@ def load_bought_together(product_id):
 
     return df
 
+@st.cache_data
 def load_discount():
-    ...
+    query = """
+        SELECT
+            o.order_id,
+            o.product_id,
+            o.location_id,
+            o.sales,
+            o.quantity,
+            o.discount,
+            o.profit,
+            o.order_date,
+            p.product_name,
+            p.category,
+            p.sub_category,
+            l.country,
+            l.region
+        FROM orders o
+        JOIN product p ON o.product_id = p.product_id
+        JOIN location l ON o.location_id = l.location_id
+        WHERE l.region IS NOT NULL
+          AND l.region <> ''
+          AND l.country IS NOT NULL
+          AND l.country <> ''
+    """
+    return fetch_sql(query)

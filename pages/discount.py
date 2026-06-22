@@ -3,13 +3,17 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from data_loader import load_discount
 
 
 st.set_page_config(page_title="Discount Analysis", layout="wide")
 
 
-REQUIRED_COLUMNS = {
-    "orders": {
+@st.cache_data
+def load_data():
+    df = load_discount()
+
+    required_columns = {
         "order_id",
         "product_id",
         "location_id",
@@ -17,39 +21,16 @@ REQUIRED_COLUMNS = {
         "discount",
         "profit",
         "order_date",
-    },
-    "product": {"product_id", "product_name", "category", "sub_category"},
-    "location": {"location_id", "country", "region"},
-}
-
-
-@st.cache_data
-def load_data():
-    orders_df = pd.read_csv("data/orders.csv")
-    products_df = pd.read_csv("data/product.csv")
-    location_df = pd.read_csv("data/location.csv")
-
-    missing = {
-        "orders.csv": REQUIRED_COLUMNS["orders"] - set(orders_df.columns),
-        "product.csv": REQUIRED_COLUMNS["product"] - set(products_df.columns),
-        "location.csv": REQUIRED_COLUMNS["location"] - set(location_df.columns),
+        "product_name",
+        "category",
+        "sub_category",
+        "country",
+        "region",
     }
-    missing = {file_name: cols for file_name, cols in missing.items() if cols}
+    missing = required_columns - set(df.columns)
     if missing:
-        details = "; ".join(
-            f"{file_name}: {', '.join(sorted(cols))}"
-            for file_name, cols in missing.items()
-        )
-        raise ValueError(f"Missing required columns - {details}")
+        raise ValueError(f"Missing required SQL columns: {', '.join(sorted(missing))}")
 
-    location_df = location_df.dropna(subset=["region", "country"])
-    location_df = location_df[
-        location_df["region"].astype(str).str.strip().ne("")
-        & location_df["country"].astype(str).str.strip().ne("")
-    ]
-
-    df = orders_df.merge(products_df, on="product_id", how="inner")
-    df = df.merge(location_df, on="location_id", how="inner")
     df = df.dropna(subset=["region", "country", "category", "sub_category"])
 
     df["order_date"] = pd.to_datetime(df["order_date"], errors="coerce")
