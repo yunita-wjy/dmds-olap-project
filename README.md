@@ -82,8 +82,8 @@ Application screenshots and a usage walkthrough will be added once the interface
 
 ## Contributors
 
-* **Yunita Wijaya** — Geospatial Hidden Gem Segmentation
-* **Jericho S** — Discount Dependency Analysis
+* **Yunita Wijaya** — Hidden-High Value Segmentation
+* **Jericho Sundjaja** — Discount Dependency Analysis
 * **Kenneth Sujayaputera** — Trap Product & Cross-Selling Analysis
 
 Contributor names and descriptions should be finalized with the project team.
