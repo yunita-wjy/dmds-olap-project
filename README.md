@@ -86,8 +86,6 @@ Application screenshots and a usage walkthrough will be added once the interface
 * **Jericho Sundjaja** — Discount Dependency Analysis
 * **Kenneth Sujayaputera** — Trap Product & Cross-Selling Analysis
 
-Contributor names and descriptions should be finalized with the project team.
-
 ## Project Status
 
 Developed as a university course project. The repository is being consolidated and documented for portfolio presentation.
