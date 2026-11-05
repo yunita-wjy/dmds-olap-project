@@ -56,6 +56,32 @@ The `product_catalog` collection is intended to store product catalog informatio
 
 The final collection structure will be documented after the implementation is verified.
 
+## Project Structure
+
+The project follows a modular structure to separate the main application, data retrieval, preprocessing, analytical logic, and database configuration.
+
+This structure was designed to support organized development and simplify the integration of multiple analytical modules within a collaborative project.
+
+```text
+dmds-olap-project/
+│
+├── data/                   # Dataset and supporting data files
+├── dbconfig/               # Database configuration
+├── pages/                  # Streamlit analytical pages
+│     ├── discount.py
+│     ├── hidden_value.py
+│     ├── trap_product.py
+│
+├── app.py                  # Main Streamlit application
+├── analyze.py              # Analytical functions
+├── data_loader.py          # Data retrieval and integration
+├── preprocess.py           # Data preprocessing
+│
+├── .streamlit/             # Streamlit configuration
+├── .gitignore
+└── README.md
+```
+
 ## Analytical Approach
 
 The analysis focuses on three areas:
