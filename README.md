@@ -70,7 +70,7 @@ dmds-olap-project/
 ├── pages/                  # Streamlit analytical pages
 │     ├── discount.py
 │     ├── hidden_value.py
-│     ├── trap_product.py
+│     └── trap_product.py
 │
 ├── app.py                  # Main Streamlit application
 ├── analyze.py              # Analytical functions
